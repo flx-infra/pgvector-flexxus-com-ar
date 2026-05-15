@@ -1,57 +1,39 @@
-version: '3.6'
-
+version: "3.9"
 services:
-  sistema_rrhh_demo:
-    image: fabreguesm/sistema_rrhh_demo:1.0.48
+  postgres-knowledge:
+    image: pgvector/pgvector:pg17
+    environment:
+      POSTGRES_DB: flexxusorder_knowledge
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: Flexxus2023**
+    ports:
+      - "5433:5432"        
+    networks:
+      - traefik  
+    volumes:
+      - openspec-pgdata:/var/lib/postgresql/data
     deploy:
       placement:
-        constraints: ["${NODE}"]
-      labels:
-        - "traefik.enable=true"
-        - "traefik.http.routers.${SERVICE_NAME}.entrypoints=web"
-        - "traefik.http.routers.${SERVICE_NAME}.rule=Host(`${DOMAIN_NAME}`)"
-        - "traefik.http.middlewares.${SERVICE_NAME}-http.redirectscheme.scheme=https"
-        - "traefik.http.routers.${SERVICE_NAME}-https.rule=Host(`${DOMAIN_NAME}`)"
-        - "traefik.http.routers.${SERVICE_NAME}-https.entrypoints=https"
-        - "traefik.http.routers.${SERVICE_NAME}-https.tls=true"
-        - "traefik.http.routers.${SERVICE_NAME}-https.tls.certresolver=myresolver"
-        - "traefik.http.services.${SERVICE_NAME}.loadbalancer.server.port=3001"      
-    environment:
-      - DB_HOST=10.250.0.68
-      - DB_PORT=5002
-      - DB_USER=root
-      - DB_PASSWORD=Flexxus2023**
-      - DB_NAME=sistema_rrhh_demo
-      - JWT_SECRET=your_jwt_secret_key_minimum_32_chars
-      - FRONTEND_URL=https://rrhh.flexxus.com.ar
-      - EMAIL_ENABLED=false
-      - SMTP_HOST=smtp.gmail.com
-      - SMTP_PORT=587
-      - SMTP_USER=your_email@domain.com
-      - SMTP_PASS=your_app_password
-      - TZ=America/Argentina/Cordoba
-      - VPN_ENDPOINT_INTERNAL=https://10.150.253.253/api/?type=op&cmd=%3Cshow%3E%3Cglobal-protect-gateway%3E%3Ccurrent-user%3E%3Cgateway%3EGW-FLX_Internal%3C/gateway%3E%3C/current-user%3E%3C/global-protect-gateway%3E%3C/show%3E&key=LUFRPT14bmhIMG8vVkVQR25rbFI2L1FCTlp0MEs5dGc9Rmx0RzAwREx0anRFakg3cEdYdHppQ3l3NXVCSzZ3L1haeUtvNExISDQ5cDZGVGdjOGV3QnpoSkEvSDEzeGpXOVFPRmEyVkFJQnFhVE5LTG83ejFMckE9PQ==
-      - VPN_ENDPOINT_REMOTE=https://10.150.253.253/api/?type=op&cmd=%3Cshow%3E%3Cglobal-protect-gateway%3E%3Ccurrent-user%3E%3Cgateway%3EGW-Flexxus_TELECOM%3C/gateway%3E%3C/current-user%3E%3C/global-protect-gateway%3E%3C/show%3E&key=LUFRPT14bmhIMG8vVkVQR25rbFI2L1FCTlp0MEs5dGc9Rmx0RzAwREx0anRFakg3cEdYdHppQ3l3NXVCSzZ3L1haeUtvNExISDQ5cDZGVGdjOGV3QnpoSkEvSDEzeGpXOVFPRmEyVkFJQnFhVE5LTG83ejFMckE9PQ==
-      - VPN_ENDPOINT_PROCOM_REMOTO=https://10.150.253.253/api/?type=op&cmd=%3Cshow%3E%3Cglobal-protect-gateway%3E%3Ccurrent-user%3E%3Cgateway%3EGW-IPLAN-MAXIMO%3C/gateway%3E%3C/current-user%3E%3C/global-protect-gateway%3E%3C/show%3E&key=LUFRPT14bmhIMG8vVkVQR25rbFI2L1FCTlp0MEs5dGc9Rmx0RzAwREx0anRFakg3cEdYdHppQ3l3NXVCSzZ3L1haeUtvNExISDQ5cDZGVGdjOGV3QnpoSkEvSDEzeGpXOVFPRmEyVkFJQnFhVE5LTG83ejFMckE9PQ==
-      - VPN_ENDPOINT_PROCOM_PRESENCIAL=https://10.150.253.253/api/?type=op&cmd=%3Cshow%3E%3Cglobal-protect-gateway%3E%3Ccurrent-user%3E%3Cgateway%3EGW-Internal%3C/gateway%3E%3C/current-user%3E%3C/global-protect-gateway%3E%3C/show%3E&key=LUFRPT14bmhIMG8vVkVQR25rbFI2L1FCTlp0MEs5dGc9Rmx0RzAwREx0anRFakg3cEdYdHppQ3l3NXVCSzZ3L1haeUtvNExISDQ5cDZGVGdjOGV3QnpoSkEvSDEzeGpXOVFPRmEyVkFJQnFhVE5LTG83ejFMckE9PQ==
-      - DB_POOL_LIMIT=40
-      - DB_ACQUIRE_TIMEOUT_MS=40000
-      - S2S_API_KEY=una-clave-segura-generada
-      - GOOGLE_PLACES_API_KEY=AIzaSyCUnPTyiaWy8eP2ravAZyrarA9zcPVG9h8
-    ports:
-      - "5030:3001"
-    volumes:
-      - backend_uploads:/app/uploads
-    networks:
-      - traefik
+        constraints: ["${NODE}"]      
+    restart: unless-stopped
     logging:
       driver: loki
       options:
-        loki-url: ${LOKI_URL}  
+        loki-url: ${LOKI_URL}
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U postgres -d flexxusorder_knowledge"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 30s
+
 volumes:
-  backend_uploads:
-    name: "${SERVICE_NAME}_backend_uploads"
+  openspec-pgdata:
+    driver: local
+    name: "${SERVICE_NAME}_flexxus-order-openspec-pgdata"
+
 networks:
+  networks:
   traefik:
-    external: 
+    external:
       name: traefik-network
