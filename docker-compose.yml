@@ -3,29 +3,56 @@ services:
   postgres-knowledge:
     image: pgvector/pgvector:pg17
     environment:
-      POSTGRES_DB: flexxusorder_knowledge
-      POSTGRES_USER: postgres
-      POSTGRES_PASSWORD: Flexxus2023**
+      POSTGRES_DB: "${POSTGRES_DB}"
+      POSTGRES_USER: "${POSTGRES_USER}"
+      POSTGRES_PASSWORD: "${POSTGRES_PASSWORD}"
     ports:
-      - "5433:5432"        
+      - "5433:5432"
     networks:
-      - traefik  
+      - traefik
     volumes:
       - openspec-pgdata:/var/lib/postgresql/data
     deploy:
       placement:
-        constraints: ["${NODE}"]      
+        constraints: ["${NODE}"]
     restart: unless-stopped
     logging:
       driver: loki
       options:
         loki-url: ${LOKI_URL}
     healthcheck:
-      test: ["CMD-SHELL", "pg_isready -U postgres -d flexxusorder_knowledge"]
+      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER} -d ${POSTGRES_DB}"]
       interval: 10s
       timeout: 5s
       retries: 5
       start_period: 30s
+
+  bitbucket-runner:
+    image: docker-public.packages.atlassian.com/sox/atlassian/bitbucket-pipelines-runner
+    container_name: runner-39b83dbd-605b-563c-8941-237d5f8b16cc
+    environment:
+      ACCOUNT_UUID: "${RUNNER_ACCOUNT_UUID}"
+      REPOSITORY_UUID: "${RUNNER_REPOSITORY_UUID}"
+      RUNNER_UUID: "${RUNNER_UUID}"
+      RUNTIME_PREREQUISITES_ENABLED: "true"
+      OAUTH_CLIENT_ID: "${RUNNER_OAUTH_CLIENT_ID}"
+      OAUTH_CLIENT_SECRET: "${RUNNER_OAUTH_CLIENT_SECRET}"
+      WORKING_DIRECTORY: /tmp
+    volumes:
+      - /tmp:/tmp
+      - /var/run/docker.sock:/var/run/docker.sock
+      - /var/lib/docker/containers:/var/lib/docker/containers:ro
+    networks:
+      - traefik
+    deploy:
+      placement:
+        constraints: ["${NODE}"]
+      restart_policy:
+        condition: unless-stopped
+    logging:
+      driver: loki
+      options:
+        loki-url: ${LOKI_URL}
 
 volumes:
   openspec-pgdata:
@@ -33,7 +60,6 @@ volumes:
     name: "${SERVICE_NAME}_flexxus-order-openspec-pgdata"
 
 networks:
-  networks:
   traefik:
     external:
       name: traefik-network
