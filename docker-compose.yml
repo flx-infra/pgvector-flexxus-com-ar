@@ -28,29 +28,6 @@ services:
       retries: 5
       start_period: 30s
 
-  bitbucket-runner:
-    image: docker-public.packages.atlassian.com/sox/atlassian/bitbucket-pipelines-runner
-    environment:
-      ACCOUNT_UUID: "${RUNNER_ACCOUNT_UUID}"
-      REPOSITORY_UUID: "${RUNNER_REPOSITORY_UUID}"
-      RUNNER_UUID: "${RUNNER_UUID}"
-      LABELS: "${RUNNER_LABELS}"
-      RUNTIME_PREREQUISITES_ENABLED: "true"
-      OAUTH_CLIENT_ID: "${RUNNER_OAUTH_CLIENT_ID}"
-      OAUTH_CLIENT_SECRET: "${RUNNER_OAUTH_CLIENT_SECRET}"
-      WORKING_DIRECTORY: /tmp
-    volumes:
-      - /tmp:/tmp
-      - /var/run/docker.sock:/var/run/docker.sock
-      - /var/lib/docker/containers:/var/lib/docker/containers:ro
-    networks:
-      - traefik
-    deploy:
-      placement:
-        constraints: ["${NODE}"]
-      restart_policy:
-        condition: any
-
 volumes:
   openspec-pgdata:
     driver: local
